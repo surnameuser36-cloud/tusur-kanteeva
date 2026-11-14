@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: tusur-kanteeva-lr1-image-service
+    runtime: python
+    plan: free
+    rootDir: lab1
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    healthCheckPath: /health
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+
+  - type: web
+    name: tusur-kanteeva-lr2-disease-api
+    runtime: python
+    plan: free
+    rootDir: lab2
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn main:app
+    healthCheckPath: /health

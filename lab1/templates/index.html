@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Изменение цветовых карт изображения</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            color: #222;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border: 1px solid #ddd;
+            margin-top: 50px;
+        }
+
+        h1, h2, h3 {
+            margin-top: 0;
+        }
+
+        form {
+            margin-bottom: 25px;
+        }
+
+        .field {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="file"],
+        input[type="number"],
+        select {
+            width: 100%;
+            max-width: 420px;
+            padding: 8px;
+            border: 1px solid #aaa;
+            box-sizing: border-box;
+        }
+
+        .captcha {
+            max-width: 420px;
+            padding: 12px;
+            border: 1px solid #bbb;
+            background: #fafafa;
+        }
+
+        .captcha-question {
+            margin-bottom: 8px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .button {
+            padding: 9px 18px;
+            border: 1px solid #333;
+            background: #333;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background: #555;
+        }
+
+        .error {
+            color: #b00020;
+            margin-top: 5px;
+        }
+
+        .hint {
+            color: #555;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .result-info {
+            padding: 10px;
+            background: #f1f1f1;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .block {
+            border: 1px solid #ddd;
+            padding: 10px;
+            background: #fafafa;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        @media (max-width: 800px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Изменение цветовых карт изображения</h1>
+    <p>
+        Загрузите изображение и выберите нужный порядок цветовых каналов <b>R</b>, <b>G</b>, <b>B</b>.
+        Приложение сформирует новое изображение с изменённым порядком цветовых карт,
+        а также построит графики распределения цветов исходной картинки и графики
+        среднего значения цвета по горизонтали и по вертикали.
+    </p>
+
+    <form method="post" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+
+        <div class="field">
+            <label>{{ form.image.label.text }}</label>
+            {{ form.image() }}
+            {% for error in form.image.errors %}
+            <div class="error">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="field">
+            <label>{{ form.channel_order.label.text }}</label>
+            {{ form.channel_order() }}
+            <div class="hint">Например: RGB — без изменений, BGR — поменять местами красный и синий каналы.</div>
+            {% for error in form.channel_order.errors %}
+            <div class="error">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="field captcha">
+            <label>CAPTCHA</label>
+            <div class="captcha-question">{{ captcha_question }}</div>
+            {{ form.captcha_answer() }}
+            {% if captcha_error %}
+            <div class="error">{{ captcha_error }}</div>
+            {% endif %}
+            {% for error in form.captcha_answer.errors %}
+            <div class="error">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="field">
+            <label>{{ form.add_timestamp() }} {{ form.add_timestamp.label.text }}</label>
+            <div class="hint">Метка размещается в правом нижнем углу полученного изображения.</div>
+        </div>
+
+        {{ form.submit(class="button") }}
+    </form>
+
+    {% if result_image %}
+    <h2>Результат обработки</h2>
+    <div class="result-info">
+        Выбранный порядок каналов: <b>{{ channel_order }}</b><br>
+        Метка времени: <b>{{ "добавлена" if timestamp_added else "не добавлена" }}</b>
+    </div>
+
+    <div class="grid">
+        <div class="block">
+            <h3>Исходная картинка</h3>
+            <img src="{{ original_image }}" alt="Исходная картинка">
+        </div>
+        <div class="block">
+            <h3>Полученная картинка</h3>
+            <img src="{{ result_image }}" alt="Картинка с изменённым порядком каналов">
+        </div>
+    </div>
+
+    <h2>Графики исходной картинки</h2>
+    <div class="grid">
+        <div class="block">
+            <h3>Распределение цветов</h3>
+            <img src="{{ plot_distribution }}" alt="График распределения цветов">
+        </div>
+        <div class="block">
+            <h3>Среднее значение цвета по горизонтали</h3>
+            <img src="{{ plot_horizontal }}" alt="График среднего значения цвета по горизонтали">
+        </div>
+        <div class="block">
+            <h3>Среднее значение цвета по вертикали</h3>
+            <img src="{{ plot_vertical }}" alt="График среднего значения цвета по вертикали">
+        </div>
+    </div>
+    {% endif %}
+</div>
+</body>
+</html>
